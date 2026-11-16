@@ -55,6 +55,16 @@ function Get-AnixTypeStatus {
     }
 }
 
+# Auto-start daemon in background if not already running
+function Ensure-AnixTypeDaemon {
+    if (-not (Get-AnixTypeStatus)) {
+        $pwCmd = Get-Command pythonw.exe -ErrorAction SilentlyContinue
+        $pythonw = if ($pwCmd) { $pwCmd.Source } else { "pythonw.exe" }
+        Start-Process -FilePath $pythonw -ArgumentList "-m anix_type daemon --port $global:AnixTypePort" -WindowStyle Hidden -ErrorAction SilentlyContinue
+    }
+}
+Ensure-AnixTypeDaemon
+
 # --- PSReadLine Key Handlers ---
 
 # 1. TAB: complete prediction OR forge ?? prompt

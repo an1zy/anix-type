@@ -44,10 +44,16 @@ def cmd_start(args: argparse.Namespace) -> None:
         print(f"⚡ ANIX Type is already running on port {settings.port}!")
         return
 
-    cmd = [sys.executable, "-m", "anix_type", "daemon", "--port", str(settings.port)]
+    exe = sys.executable
+    if sys.platform == "win32":
+        pw = Path(sys.executable).parent / "pythonw.exe"
+        if pw.is_file():
+            exe = str(pw)
+
+    cmd = [exe, "-m", "anix_type", "daemon", "--port", str(settings.port)]
     creationflags = 0
     if sys.platform == "win32":
-        creationflags = subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS  # type: ignore[attr-defined]
+        creationflags = subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore[attr-defined]
 
     subprocess.Popen(
         cmd,
@@ -55,6 +61,7 @@ def cmd_start(args: argparse.Namespace) -> None:
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         creationflags=creationflags,
+        close_fds=True,
     )
     print(f"⚡ ANIX Type started in background on http://127.0.0.1:{settings.port}")
 

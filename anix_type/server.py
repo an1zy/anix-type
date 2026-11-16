@@ -112,16 +112,26 @@ class TypeServer(ThreadingHTTPServer):
 
 
 def run_server(port: int = 8766, verbose: bool = False) -> None:
+    import os
+    if sys.stdout is None:
+        sys.stdout = open(os.devnull, "w", encoding="utf-8")
+    if sys.stderr is None:
+        sys.stderr = open(os.devnull, "w", encoding="utf-8")
+
     settings = Settings.load()
     port = port or settings.port
     level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(level=level, format="[%(asctime)s] %(levelname)s: %(message)s")
 
     server = TypeServer(port=port, settings=settings)
-    print(f"⚡ ANIX Type daemon running on http://127.0.0.1:{port}", flush=True)
+    try:
+        print(f"⚡ ANIX Type daemon running on http://127.0.0.1:{port}", flush=True)
+    except OSError:
+        pass
+
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\nStopping daemon...")
+        pass
     finally:
         server.server_close()
