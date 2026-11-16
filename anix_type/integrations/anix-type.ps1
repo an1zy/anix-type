@@ -12,13 +12,14 @@ function Invoke-AnixTypeApi {
     param(
         [string]$Endpoint,
         [hashtable]$Body,
-        [int]$TimeoutMs = 150
+        [int]$TimeoutMs = 500
     )
     try {
         $json = $Body | ConvertTo-Json -Compress
         $req = [System.Net.HttpWebRequest]::Create("$global:AnixTypeUrl$Endpoint")
         $req.Method = "POST"
         $req.ContentType = "application/json; charset=utf-8"
+        $req.Proxy = $null  # Bypass Windows WPAD proxy resolution (drops latency from 50ms to 2ms)
         $req.Timeout = $TimeoutMs
         $req.ReadWriteTimeout = $TimeoutMs
 
@@ -37,7 +38,7 @@ function Invoke-AnixTypeApi {
         return ($resText | ConvertFrom-Json)
     }
     catch {
-        # Daemon is not running or timed out — fail silently to never block typing
+        # Fail silently on timeout or error to never block typing
         return $null
     }
 }
@@ -45,7 +46,8 @@ function Invoke-AnixTypeApi {
 function Get-AnixTypeStatus {
     try {
         $req = [System.Net.HttpWebRequest]::Create("$global:AnixTypeUrl/health")
-        $req.Timeout = 300
+        $req.Proxy = $null
+        $req.Timeout = 400
         $resp = $req.GetResponse()
         $resp.Close()
         return $true
@@ -96,10 +98,10 @@ Set-PSReadLineKeyHandler -Key Tab -BriefDescription "ANIX Type Tab Complete" -Sc
             line   = $line
             cursor = $cursor
             cwd    = (Get-Location).Path
-        } -TimeoutMs 200
+        } -TimeoutMs 400
 
-        if ($sug -and $sug.suffix) {
-            [Microsoft.PowerShell.PSConsoleReadLine]::Insert($sug.suffix)
+        if ($sug -and $sug.text) {
+            [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $sug.text)
             return
         }
     }
@@ -121,10 +123,10 @@ Set-PSReadLineKeyHandler -Key RightArrow -BriefDescription "ANIX Type RightArrow
             line   = $line
             cursor = $cursor
             cwd    = (Get-Location).Path
-        } -TimeoutMs 150
+        } -TimeoutMs 300
 
-        if ($sug -and $sug.suffix) {
-            [Microsoft.PowerShell.PSConsoleReadLine]::Insert($sug.suffix)
+        if ($sug -and $sug.text) {
+            [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $sug.text)
             return
         }
     }
@@ -170,10 +172,12 @@ Set-PSReadLineKeyHandler -Chord 'Ctrl+Spacebar' -BriefDescription "ANIX Type Tri
             line   = $line
             cursor = $cursor
             cwd    = (Get-Location).Path
-        } -TimeoutMs 250
+        } -TimeoutMs 400
 
-        if ($sug -and $sug.suffix) {
-            [Microsoft.PowerShell.PSConsoleReadLine]::Insert($sug.suffix)
+        if ($sug -and $sug.text) {
+            [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $sug.text)
         }
     }
 }
+
+Write-Host "⚡ ANIX Type ready" -ForegroundColor DarkGray
