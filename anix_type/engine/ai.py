@@ -140,15 +140,60 @@ def forge_command(prompt: str, shell: str = "powershell", settings: Settings | N
         except Exception as e:
             return "", f"Groq error: {e}"
 
-    # 2. Try Ollama (local)
+    # 2. Try OpenAI-compatible API (OpenAI, DeepSeek, OpenRouter, Gemini, proxy)
+    if (settings.ai_provider in ("openai", "custom") or settings.openai_api_key) and settings.openai_api_key:
+        try:
+            return _call_openai_compatible(clean, shell, settings)
+        except Exception as e:
+            return "", f"AI error: {e}"
+
+    # 3. Try Ollama (local)
     if settings.ai_provider == "ollama":
         try:
             return _call_ollama(clean, shell, settings)
         except Exception as e:
             return "", f"Ollama error: {e}"
 
-    # 3. Fallback when no key is set
-    return "", "AI is not configured. Set free Groq key via `anix-type config --groq-key <key>` or run Ollama."
+    # 4. Fallback when no key is set
+    return "", "AI is not configured. Set free Groq key, OpenAI/DeepSeek key, or run Ollama."
+
+
+def _call_openai_compatible(prompt: str, shell: str, settings: Settings) -> tuple[str, str]:
+    url = f"{settings.openai_base_url.rstrip('/')}/chat/completions"
+    model = settings.model if settings.model and "llama-3.1" not in settings.model else "gpt-4o-mini"
+    payload = {
+        "model": model,
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    f"You are a terminal command generator for {shell}. "
+                    "Output ONLY the single executable command string. "
+                    "No markdown code blocks, no backticks, no explanations, no prefix. "
+                    "Just the exact shell command that accomplishes the task."
+                ),
+            },
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": 0.1,
+        "max_tokens": 128,
+    }
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {settings.openai_api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "anix-type",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=5.0) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
+        raw = data["choices"][0]["message"]["content"].strip()
+        clean_cmd = raw.replace("```bash", "").replace("```powershell", "").replace("```", "").strip()
+        clean_cmd = clean_cmd.splitlines()[0] if clean_cmd.splitlines() else clean_cmd
+        return clean_cmd, f"Generated via {settings.ai_provider or 'OpenAI-compatible'}"
 
 
 def _call_groq(prompt: str, shell: str, settings: Settings) -> tuple[str, str]:

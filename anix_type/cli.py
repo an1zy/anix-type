@@ -146,20 +146,44 @@ def _install_powershell() -> None:
 
 def cmd_config(args: argparse.Namespace) -> None:
     settings = Settings.load()
+    changed = False
+
     if args.groq_key:
         settings.groq_api_key = args.groq_key.strip()
         settings.ai_provider = "groq"
-        settings.save()
+        changed = True
         print("✓ Groq API key saved and activated!")
-    elif args.ollama:
+
+    if args.openai_key:
+        settings.openai_api_key = args.openai_key.strip()
+        settings.ai_provider = "openai"
+        changed = True
+        print("✓ OpenAI/DeepSeek/Custom API key saved and activated!")
+
+    if args.base_url:
+        settings.openai_base_url = args.base_url.strip()
+        changed = True
+        print(f"✓ Base URL set to: {settings.openai_base_url}")
+
+    if args.model:
+        settings.model = args.model.strip()
+        changed = True
+        print(f"✓ Model set to: {settings.model}")
+
+    if args.ollama:
         settings.ai_provider = "ollama"
-        if args.model:
-            settings.model = args.model
-        settings.save()
+        changed = True
         print("✓ Switched AI provider to local Ollama!")
+
+    if changed:
+        settings.save()
+        print("Restarting daemon to apply new configuration...")
+        cmd_stop(args)
+        cmd_start(args)
     else:
         print("Usage:")
         print("  anix-type config --groq-key gsk_...")
+        print("  anix-type config --openai-key sk-... [--base-url https://api.deepseek.com/v1] [--model deepseek-chat]")
         print("  anix-type config --ollama [--model qwen2.5-coder:1.5b]")
 
 
@@ -178,8 +202,10 @@ def main() -> None:
 
     p_conf = subparsers.add_parser("config", help="Configure AI providers and keys")
     p_conf.add_argument("--groq-key", help="Free Groq API key from console.groq.com")
+    p_conf.add_argument("--openai-key", help="OpenAI, DeepSeek, OpenRouter or proxy API key")
+    p_conf.add_argument("--base-url", help="Custom OpenAI-compatible base URL (e.g. https://api.deepseek.com/v1)")
     p_conf.add_argument("--ollama", action="store_true", help="Use local Ollama")
-    p_conf.add_argument("--model", help="Model name")
+    p_conf.add_argument("--model", help="Model name (e.g. deepseek-chat, gpt-4o-mini, llama-3.1-8b-instant)")
 
     args = parser.parse_args()
     if not args.command:
