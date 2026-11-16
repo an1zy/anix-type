@@ -1,7 +1,7 @@
 [project]
-name = "anix-ghost"
+name = "anix-type"
 version = "0.1.0"
-description = "Context-aware AI ghost autocompletion & command forge for your terminal."
+description = "Context-aware AI autocompletion & command forge for your terminal."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 authors = [{ name = "an1zy" }]
-keywords = ["ai", "terminal", "powershell", "autocomplete", "cli", "ghost-text", "groq", "llm"]
+keywords = ["ai", "terminal", "powershell", "autocomplete", "cli", "type", "groq", "llm"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",
@@ -20,24 +20,24 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/an1zy/anix-ghost"
-Issues = "https://github.com/an1zy/anix-ghost/issues"
+Homepage = "https://github.com/an1zy/anix-type"
+Issues = "https://github.com/an1zy/anix-type/issues"
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.5"]
 
 [project.scripts]
-anix-ghost = "anix_ghost.cli:main"
+anix-type = "anix_type.cli:main"
 
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["anix_ghost*"]
+include = ["anix_type*"]
 
 [tool.setuptools.package-data]
-"anix_ghost.integrations" = ["*.ps1", "*.sh"]
+"anix_type.integrations" = ["*.ps1", "*.sh"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

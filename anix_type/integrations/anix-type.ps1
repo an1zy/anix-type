@@ -1,14 +1,14 @@
-﻿# ANIX Ghost — PowerShell integration module
+﻿# ANIX Type — PowerShell integration module
 # Hooked into PSReadLine for instant Tab completions and ?? command forging.
 
 if (-not (Get-Module -Name PSReadLine)) {
     Import-Module PSReadLine -ErrorAction SilentlyContinue
 }
 
-$global:AnixGhostPort = 8766
-$global:AnixGhostUrl = "http://127.0.0.1:$global:AnixGhostPort"
+$global:AnixTypePort = 8766
+$global:AnixTypeUrl = "http://127.0.0.1:$global:AnixTypePort"
 
-function Invoke-AnixGhostApi {
+function Invoke-AnixTypeApi {
     param(
         [string]$Endpoint,
         [hashtable]$Body,
@@ -16,7 +16,7 @@ function Invoke-AnixGhostApi {
     )
     try {
         $json = $Body | ConvertTo-Json -Compress
-        $req = [System.Net.HttpWebRequest]::Create("$global:AnixGhostUrl$Endpoint")
+        $req = [System.Net.HttpWebRequest]::Create("$global:AnixTypeUrl$Endpoint")
         $req.Method = "POST"
         $req.ContentType = "application/json; charset=utf-8"
         $req.Timeout = $TimeoutMs
@@ -42,9 +42,9 @@ function Invoke-AnixGhostApi {
     }
 }
 
-function Get-AnixGhostStatus {
+function Get-AnixTypeStatus {
     try {
-        $req = [System.Net.HttpWebRequest]::Create("$global:AnixGhostUrl/health")
+        $req = [System.Net.HttpWebRequest]::Create("$global:AnixTypeUrl/health")
         $req.Timeout = 300
         $resp = $req.GetResponse()
         $resp.Close()
@@ -57,8 +57,8 @@ function Get-AnixGhostStatus {
 
 # --- PSReadLine Key Handlers ---
 
-# 1. TAB: complete ghost prediction OR forge ?? prompt
-Set-PSReadLineKeyHandler -Key Tab -BriefDescription "ANIX Ghost Tab Complete" -ScriptBlock {
+# 1. TAB: complete prediction OR forge ?? prompt
+Set-PSReadLineKeyHandler -Key Tab -BriefDescription "ANIX Type Tab Complete" -ScriptBlock {
     param($key, $arg)
 
     $line = $null
@@ -68,7 +68,7 @@ Set-PSReadLineKeyHandler -Key Tab -BriefDescription "ANIX Ghost Tab Complete" -S
     # 1. Check if it is a natural language command forge: ?? ...
     if ($line -match '^\s*\?\?\s*(.+)$') {
         $prompt = $matches[1]
-        $res = Invoke-AnixGhostApi -Endpoint "/forge" -Body @{
+        $res = Invoke-AnixTypeApi -Endpoint "/forge" -Body @{
             prompt = $prompt
             shell  = "powershell"
             cwd    = (Get-Location).Path
@@ -80,9 +80,9 @@ Set-PSReadLineKeyHandler -Key Tab -BriefDescription "ANIX Ghost Tab Complete" -S
         }
     }
 
-    # 2. Check if cursor is at the end and we have a ghost prediction
+    # 2. Check if cursor is at the end and we have a prediction
     if ($cursor -eq $line.Length -and $line.Trim().Length -gt 0) {
-        $sug = Invoke-AnixGhostApi -Endpoint "/suggest" -Body @{
+        $sug = Invoke-AnixTypeApi -Endpoint "/suggest" -Body @{
             line   = $line
             cursor = $cursor
             cwd    = (Get-Location).Path
@@ -98,8 +98,8 @@ Set-PSReadLineKeyHandler -Key Tab -BriefDescription "ANIX Ghost Tab Complete" -S
     [Microsoft.PowerShell.PSConsoleReadLine]::TabCompleteNext($key, $arg)
 }
 
-# 2. RightArrow: accept ghost completion when at the end of the line
-Set-PSReadLineKeyHandler -Key RightArrow -BriefDescription "ANIX Ghost RightArrow Complete" -ScriptBlock {
+# 2. RightArrow: accept completion when at the end of the line
+Set-PSReadLineKeyHandler -Key RightArrow -BriefDescription "ANIX Type RightArrow Complete" -ScriptBlock {
     param($key, $arg)
 
     $line = $null
@@ -107,7 +107,7 @@ Set-PSReadLineKeyHandler -Key RightArrow -BriefDescription "ANIX Ghost RightArro
     [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
 
     if ($cursor -eq $line.Length -and $line.Trim().Length -gt 0) {
-        $sug = Invoke-AnixGhostApi -Endpoint "/suggest" -Body @{
+        $sug = Invoke-AnixTypeApi -Endpoint "/suggest" -Body @{
             line   = $line
             cursor = $cursor
             cwd    = (Get-Location).Path
@@ -123,7 +123,7 @@ Set-PSReadLineKeyHandler -Key RightArrow -BriefDescription "ANIX Ghost RightArro
 }
 
 # 3. ENTER on '?? ...': forge command and replace in prompt
-Set-PSReadLineKeyHandler -Key Enter -BriefDescription "ANIX Ghost Enter Forge" -ScriptBlock {
+Set-PSReadLineKeyHandler -Key Enter -BriefDescription "ANIX Type Enter Forge" -ScriptBlock {
     param($key, $arg)
 
     $line = $null
@@ -132,7 +132,7 @@ Set-PSReadLineKeyHandler -Key Enter -BriefDescription "ANIX Ghost Enter Forge" -
 
     if ($line -match '^\s*\?\?\s*(.+)$') {
         $prompt = $matches[1]
-        $res = Invoke-AnixGhostApi -Endpoint "/forge" -Body @{
+        $res = Invoke-AnixTypeApi -Endpoint "/forge" -Body @{
             prompt = $prompt
             shell  = "powershell"
             cwd    = (Get-Location).Path
@@ -147,8 +147,8 @@ Set-PSReadLineKeyHandler -Key Enter -BriefDescription "ANIX Ghost Enter Forge" -
     [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine($key, $arg)
 }
 
-# 4. Ctrl+Space: manual trigger for suggestion
-Set-PSReadLineKeyHandler -Chord 'Ctrl+Space' -BriefDescription "ANIX Ghost Trigger" -ScriptBlock {
+# 4. Ctrl+Spacebar: manual trigger for suggestion
+Set-PSReadLineKeyHandler -Chord 'Ctrl+Spacebar' -BriefDescription "ANIX Type Trigger" -ScriptBlock {
     param($key, $arg)
 
     $line = $null
@@ -156,7 +156,7 @@ Set-PSReadLineKeyHandler -Chord 'Ctrl+Space' -BriefDescription "ANIX Ghost Trigg
     [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
 
     if ($line.Trim().Length -gt 0) {
-        $sug = Invoke-AnixGhostApi -Endpoint "/suggest" -Body @{
+        $sug = Invoke-AnixTypeApi -Endpoint "/suggest" -Body @{
             line   = $line
             cursor = $cursor
             cwd    = (Get-Location).Path

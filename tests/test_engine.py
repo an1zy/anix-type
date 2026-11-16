@@ -1,7 +1,7 @@
 from pathlib import Path
-from anix_ghost.engine.context import ProjectContext, extract_context, get_git_info, get_package_scripts
-from anix_ghost.engine.history import HistoryIndex
-from anix_ghost.engine.heuristics import predict_heuristics
+from anix_type.engine.context import ProjectContext, extract_context, get_git_info, get_package_scripts
+from anix_type.engine.history import HistoryIndex
+from anix_type.engine.heuristics import predict_heuristics
 
 
 def test_git_detection(tmp_path: Path):

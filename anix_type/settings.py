@@ -1,4 +1,4 @@
-"""Settings & credentials for anix-ghost."""
+"""Settings & credentials for anix-type."""
 from __future__ import annotations
 
 import json
@@ -13,7 +13,7 @@ def get_config_dir() -> Path:
         base = os.environ.get("APPDATA") or Path.home() / "AppData" / "Roaming"
     else:
         base = os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config"
-    config_dir = Path(base) / "anix-ghost"
+    config_dir = Path(base) / "anix-type"
     config_dir.mkdir(parents=True, exist_ok=True)
     return config_dir
 

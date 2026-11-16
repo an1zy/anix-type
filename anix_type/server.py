@@ -1,4 +1,4 @@
-"""High-performance local daemon for anix-ghost."""
+"""High-performance local daemon for anix-type."""
 from __future__ import annotations
 
 import json
@@ -16,14 +16,13 @@ from .engine.heuristics import predict_heuristics
 from .engine.history import HistoryIndex
 from .settings import Settings
 
-logger = logging.getLogger("anix_ghost.server")
+logger = logging.getLogger("anix_type.server")
 
 
-class GhostHandler(BaseHTTPRequestHandler):
-    server: GhostServer  # type annotation
+class TypeHandler(BaseHTTPRequestHandler):
+    server: TypeServer  # type annotation
 
     def log_message(self, format: str, *args: Any) -> None:
-        # Suppress default stdout log noise for speed; log to debug only
         logger.debug("%s - " + format, self.address_string(), *args)
 
     def _send_json(self, status: int, data: dict[str, Any]) -> None:
@@ -38,7 +37,7 @@ class GhostHandler(BaseHTTPRequestHandler):
         if self.path in ("/health", "/status", "/"):
             self._send_json(200, {
                 "status": "ok",
-                "service": "anix-ghost",
+                "service": "anix-type",
                 "version": __version__,
                 "uptime": time.time() - self.server.start_time,
             })
@@ -93,10 +92,10 @@ class GhostHandler(BaseHTTPRequestHandler):
         })
 
 
-class GhostServer(ThreadingHTTPServer):
+class TypeServer(ThreadingHTTPServer):
     def __init__(self, host: str = "127.0.0.1", port: int = 8766, settings: Settings | None = None) -> None:
         self.settings = settings or Settings.load()
-        super().__init__((host, port), GhostHandler)
+        super().__init__((host, port), TypeHandler)
         self.start_time = time.time()
         self.history = HistoryIndex()
         self._context_cache: dict[str, tuple[float, ProjectContext]] = {}
@@ -118,8 +117,8 @@ def run_server(port: int = 8766, verbose: bool = False) -> None:
     level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(level=level, format="[%(asctime)s] %(levelname)s: %(message)s")
 
-    server = GhostServer(port=port, settings=settings)
-    print(f"👻 ANIX Ghost daemon running on http://127.0.0.1:{port}", flush=True)
+    server = TypeServer(port=port, settings=settings)
+    print(f"⚡ ANIX Type daemon running on http://127.0.0.1:{port}", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

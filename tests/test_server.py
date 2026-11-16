@@ -3,8 +3,8 @@ import threading
 import time
 import urllib.request
 from pathlib import Path
-from anix_ghost.server import GhostServer
-from anix_ghost.settings import Settings
+from anix_type.server import TypeServer
+from anix_type.settings import Settings
 
 
 def test_server_suggest_endpoint(tmp_path: Path):
@@ -13,19 +13,17 @@ def test_server_suggest_endpoint(tmp_path: Path):
     (git_dir / "HEAD").write_text("ref: refs/heads/main\n", encoding="utf-8")
 
     settings = Settings(port=18766)
-    server = GhostServer(port=18766, settings=settings)
+    server = TypeServer(port=18766, settings=settings)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     time.sleep(0.1)
 
     try:
-        # 1. Health check
         with urllib.request.urlopen("http://127.0.0.1:18766/health") as resp:
             data = json.loads(resp.read().decode())
             assert data["status"] == "ok"
-            assert data["service"] == "anix-ghost"
+            assert data["service"] == "anix-type"
 
-        # 2. Suggestion check
         req_data = json.dumps({"line": "git p", "cwd": str(tmp_path)}).encode()
         req = urllib.request.Request(
             "http://127.0.0.1:18766/suggest",

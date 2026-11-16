@@ -1,12 +1,12 @@
-# ANIX Ghost
+# ANIX Type
 
-> 👻 Context-aware AI ghost autocompletion & command forge for your terminal.
+> ⚡ Context-aware AI autocompletion & command forge for your terminal.
 
 ```
 PS C:\projects\my-app> git p·ush -u origin main
 ```
 
-Press `Tab` or `→` to accept the ghost suggestion.  
+Press `Tab` or `→` to accept the suggestion.  
 Type `?? <what you want to do>` and press `Enter` to forge commands from natural language.
 
 ---
@@ -23,8 +23,9 @@ Type `?? <what you want to do>` and press `Enter` to forge commands from natural
 ## Installation
 
 ```bash
-pip install anix-ghost
-anix-ghost install
+pip install anix-type
+anix-type install
+anix-type start
 ```
 
 ---

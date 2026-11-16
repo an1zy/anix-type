@@ -1,4 +1,4 @@
-"""Command-line interface for anix-ghost."""
+"""Command-line interface for anix-type."""
 from __future__ import annotations
 
 import argparse
@@ -24,7 +24,7 @@ def _check_running(port: int = 8766) -> bool:
 def cmd_status(args: argparse.Namespace) -> None:
     settings = Settings.load()
     running = _check_running(settings.port)
-    print(f"👻 ANIX Ghost v{__version__}")
+    print(f"⚡ ANIX Type v{__version__}")
     print(f"  Daemon status: {'🟢 Running' if running else '🔴 Stopped'}")
     print(f"  Port:          {settings.port}")
     print(f"  AI Provider:   {settings.ai_provider}")
@@ -41,11 +41,10 @@ def cmd_daemon(args: argparse.Namespace) -> None:
 def cmd_start(args: argparse.Namespace) -> None:
     settings = Settings.load()
     if _check_running(settings.port):
-        print(f"👻 ANIX Ghost is already running on port {settings.port}!")
+        print(f"⚡ ANIX Type is already running on port {settings.port}!")
         return
 
-    # Run in background via subprocess
-    cmd = [sys.executable, "-m", "anix_ghost", "daemon", "--port", str(settings.port)]
+    cmd = [sys.executable, "-m", "anix_type", "daemon", "--port", str(settings.port)]
     creationflags = 0
     if sys.platform == "win32":
         creationflags = subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS  # type: ignore[attr-defined]
@@ -57,25 +56,23 @@ def cmd_start(args: argparse.Namespace) -> None:
         stderr=subprocess.DEVNULL,
         creationflags=creationflags,
     )
-    print(f"👻 ANIX Ghost started in background on http://127.0.0.1:{settings.port}")
+    print(f"⚡ ANIX Type started in background on http://127.0.0.1:{settings.port}")
 
 
 def cmd_stop(args: argparse.Namespace) -> None:
-    # On Windows, stop by finding process listening on port
     settings = Settings.load()
     if not _check_running(settings.port):
-        print("ANIX Ghost is not running.")
+        print("ANIX Type is not running.")
         return
 
     if sys.platform == "win32":
-        # Find PID via netstat
         try:
             out = subprocess.check_output(f"netstat -ano | findstr :{settings.port}", shell=True, text=True)
             for line in out.splitlines():
                 if "LISTENING" in line:
                     pid = line.strip().split()[-1]
                     subprocess.run(f"taskkill /PID {pid} /F", shell=True, check=False)
-                    print("👻 ANIX Ghost daemon stopped.")
+                    print("⚡ ANIX Type daemon stopped.")
                     return
         except Exception:
             pass
@@ -87,27 +84,38 @@ def cmd_install(args: argparse.Namespace) -> None:
     if sys.platform == "win32":
         _install_powershell()
     else:
-        print("For Linux/macOS, add `eval $(anix-ghost init zsh)` to your ~/.zshrc or ~/.bashrc.")
+        print("For Linux/macOS, add `eval $(anix-type init zsh)` to your ~/.zshrc or ~/.bashrc.")
+
+
+def _get_powershell_profile_path() -> Path:
+    candidates = [
+        Path.home() / "Documents" / "WindowsPowerShell" / "Microsoft.PowerShell_profile.ps1",
+        Path.home() / "OneDrive" / "Documents" / "WindowsPowerShell" / "Microsoft.PowerShell_profile.ps1",
+    ]
+    for c in candidates:
+        if c.is_file():
+            return c
+
+    try:
+        raw = subprocess.check_output(
+            ["powershell", "-NoProfile", "-Command", "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Write-Output $PROFILE"],
+        )
+        path_str = raw.decode("utf-8", errors="replace").strip()
+        if path_str:
+            return Path(path_str)
+    except Exception:
+        pass
+
+    return candidates[0]
 
 
 def _install_powershell() -> None:
-    ps_file = Path(__file__).resolve().parent / "integrations" / "anix-ghost.ps1"
+    ps_file = Path(__file__).resolve().parent / "integrations" / "anix-type.ps1"
     if not ps_file.is_file():
         print(f"Error: integration script not found at {ps_file}")
         return
 
-    # Find Windows PowerShell $PROFILE path
-    try:
-        profile_path_str = subprocess.check_output(
-            ["powershell", "-NoProfile", "-Command", "Write-Output $PROFILE"],
-            text=True,
-            encoding="utf-8",
-        ).strip()
-    except Exception as e:
-        print(f"Could not determine PowerShell $PROFILE: {e}")
-        return
-
-    profile_path = Path(profile_path_str)
+    profile_path = _get_powershell_profile_path()
     profile_path.parent.mkdir(parents=True, exist_ok=True)
 
     hook_line = f'. "{ps_file}"'
@@ -116,14 +124,14 @@ def _install_powershell() -> None:
         existing = profile_path.read_text(encoding="utf-8", errors="ignore")
 
     if hook_line in existing:
-        print("✓ ANIX Ghost is already hooked into your PowerShell $PROFILE:")
+        print("✓ ANIX Type is already hooked into your PowerShell $PROFILE:")
         print(f"  {profile_path}")
     else:
         with open(profile_path, "a", encoding="utf-8") as f:
             if existing and not existing.endswith("\n"):
                 f.write("\n")
-            f.write(f"\n# ANIX Ghost shell autocompletion\n{hook_line}\n")
-        print("🎉 Successfully hooked ANIX Ghost into PowerShell $PROFILE:")
+            f.write(f"\n# ANIX Type shell autocompletion\n{hook_line}\n")
+        print("🎉 Successfully hooked ANIX Type into PowerShell $PROFILE:")
         print(f"  {profile_path}")
         print("\nTo activate immediately, restart PowerShell or run:")
         print(f'  . "$PROFILE"')
@@ -144,30 +152,23 @@ def cmd_config(args: argparse.Namespace) -> None:
         print("✓ Switched AI provider to local Ollama!")
     else:
         print("Usage:")
-        print("  anix-ghost config --groq-key gsk_...")
-        print("  anix-ghost config --ollama [--model qwen2.5-coder:1.5b]")
+        print("  anix-type config --groq-key gsk_...")
+        print("  anix-type config --ollama [--model qwen2.5-coder:1.5b]")
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(prog="anix-ghost", description="Context-aware AI ghost autocompletion for terminal.")
+    parser = argparse.ArgumentParser(prog="anix-type", description="Context-aware AI autocompletion for terminal.")
     subparsers = parser.add_subparsers(dest="command")
 
-    # daemon
     p_daemon = subparsers.add_parser("daemon", help="Run the daemon in foreground")
     p_daemon.add_argument("--port", type=int, default=8766, help="Port to listen on (default: 8766)")
     p_daemon.add_argument("--verbose", action="store_true", help="Enable debug logging")
 
-    # start / stop
     subparsers.add_parser("start", help="Start the daemon in background")
     subparsers.add_parser("stop", help="Stop the running background daemon")
-
-    # status
     subparsers.add_parser("status", help="Show daemon and AI configuration status")
+    subparsers.add_parser("install", help="Hook ANIX Type into PowerShell $PROFILE")
 
-    # install
-    subparsers.add_parser("install", help="Hook ANIX Ghost into PowerShell $PROFILE")
-
-    # config
     p_conf = subparsers.add_parser("config", help="Configure AI providers and keys")
     p_conf.add_argument("--groq-key", help="Free Groq API key from console.groq.com")
     p_conf.add_argument("--ollama", action="store_true", help="Use local Ollama")
