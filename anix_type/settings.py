@@ -21,6 +21,7 @@ def get_config_dir() -> Path:
 @dataclass
 class Settings:
     port: int = 8766
+    language: str = "auto"  # "auto", "ru", "en"
     ai_enabled: bool = True
     ai_provider: str = "groq"  # "groq", "ollama", "openai", "none"
     groq_api_key: str = ""
