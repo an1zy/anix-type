@@ -119,7 +119,7 @@ def run_server(port: int = 8766, verbose: bool = False) -> None:
     logging.basicConfig(level=level, format="[%(asctime)s] %(levelname)s: %(message)s")
 
     server = GhostServer(port=port, settings=settings)
-    print(f"👻 ANIX Ghost daemon running on http://127.0.0.1:{port}")
+    print(f"👻 ANIX Ghost daemon running on http://127.0.0.1:{port}", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
