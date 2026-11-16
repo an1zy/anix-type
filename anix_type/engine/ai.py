@@ -26,10 +26,14 @@ def _forge_offline(prompt: str, shell: str) -> str | None:
     if ("изменить" in p or "переписать" in p or "дополнить" in p or "amend" in p) and ("коммит" in p or "commit" in p):
         return "git commit --amend"
 
-    # Git stash
-    if "stash" in p or "спрятать" in p or "сохранить изменения" in p:
-        if "вернуть" in p or "pop" in p or "достать" in p or "применить" in p:
-            return "git stash pop"
+    # Git stash restore / pop
+    if ("вернуть" in p or "достать" in p or "применить" in p or "pop" in p or "восстановить" in p) and (
+        "изменения" in p or "код" in p or "stash" in p or "стэш" in p
+    ):
+        return "git stash pop"
+
+    # Git stash save
+    if "stash" in p or "спрятать" in p or ("сохранить" in p and "изменения" in p):
         if "список" in p or "list" in p:
             return "git stash list"
         return "git stash"

@@ -163,6 +163,11 @@ def _predict_python(buffer: str, ctx: ProjectContext) -> Suggestion | None:
         full = "pytest -q"
         return Suggestion(full, full[len(buffer):], "python", 0.9)
 
+    # py -> python
+    if b == "py":
+        full = "python"
+        return Suggestion(full, full[len(buffer):], "python", 0.9)
+
     # python <script>.py
     for py_prefix in ("python ", "py ", "python3 "):
         if buffer.startswith(py_prefix):
@@ -174,7 +179,7 @@ def _predict_python(buffer: str, ctx: ProjectContext) -> Suggestion | None:
                         return Suggestion(full, full[len(buffer):], "python", 0.85)
 
     # pip install
-    if b in ("pip i", "pip in", "pip ins", "pip inst"):
+    if b in ("pip", "pip i", "pip in", "pip ins", "pip inst"):
         full = "pip install "
         return Suggestion(full, full[len(buffer):], "python", 0.9)
 
