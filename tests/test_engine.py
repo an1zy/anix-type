@@ -58,3 +58,12 @@ def test_heuristics_history_fallback(tmp_path: Path):
     assert sug is not None
     assert sug.text == "cargo test --release"
     assert sug.source == "history"
+
+
+def test_offline_forge():
+    from anix_type.engine.ai import forge_command
+    cmd, _ = forge_command("откатить последний коммит но оставить файлы", shell="powershell")
+    assert cmd == "git reset --soft HEAD~1"
+
+    cmd2, _ = forge_command("убить процесс на порту 8080", shell="powershell")
+    assert "Stop-Process" in cmd2 and "8080" in cmd2

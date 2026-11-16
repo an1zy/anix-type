@@ -67,6 +67,36 @@ function Ensure-AnixTypeDaemon {
 }
 Ensure-AnixTypeDaemon
 
+# Helper to safely replace current input buffer without throwing overload exceptions
+function Set-AnixTypeLine {
+    param([string]$NewText)
+    $curLine = $null
+    $curPos = $null
+    [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$curLine, [ref]$curPos)
+    if ($curLine -and $curLine.Length -gt 0) {
+        [Microsoft.PowerShell.PSConsoleReadLine]::Delete(0, $curLine.Length)
+    }
+    if (-not [string]::IsNullOrEmpty($NewText)) {
+        [Microsoft.PowerShell.PSConsoleReadLine]::Insert($NewText)
+    }
+}
+
+function Apply-AnixTypeSuggestion {
+    param($sug, $line, $cursor)
+    if (-not $sug) { return $false }
+
+    # If suffix is available and cursor is at the end of line, simply insert suffix
+    if ($sug.suffix -and ($cursor -eq $line.Length)) {
+        [Microsoft.PowerShell.PSConsoleReadLine]::Insert($sug.suffix)
+        return $true
+    }
+    if ($sug.text) {
+        Set-AnixTypeLine $sug.text
+        return $true
+    }
+    return $false
+}
+
 # --- PSReadLine Key Handlers ---
 
 # 1. TAB: complete prediction OR forge ?? prompt
@@ -87,7 +117,7 @@ Set-PSReadLineKeyHandler -Key Tab -BriefDescription "ANIX Type Tab Complete" -Sc
         } -TimeoutMs 4000
 
         if ($res -and $res.command) {
-            [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $res.command)
+            Set-AnixTypeLine $res.command
             return
         }
     }
@@ -100,8 +130,7 @@ Set-PSReadLineKeyHandler -Key Tab -BriefDescription "ANIX Type Tab Complete" -Sc
             cwd    = (Get-Location).Path
         } -TimeoutMs 400
 
-        if ($sug -and $sug.text) {
-            [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $sug.text)
+        if (Apply-AnixTypeSuggestion -sug $sug -line $line -cursor $cursor) {
             return
         }
     }
@@ -125,8 +154,7 @@ Set-PSReadLineKeyHandler -Key RightArrow -BriefDescription "ANIX Type RightArrow
             cwd    = (Get-Location).Path
         } -TimeoutMs 300
 
-        if ($sug -and $sug.text) {
-            [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $sug.text)
+        if (Apply-AnixTypeSuggestion -sug $sug -line $line -cursor $cursor) {
             return
         }
     }
@@ -151,9 +179,14 @@ Set-PSReadLineKeyHandler -Key Enter -BriefDescription "ANIX Type Enter Forge" -S
         } -TimeoutMs 4000
 
         if ($res -and $res.command) {
-            [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $res.command)
+            Set-AnixTypeLine $res.command
             return
         }
+        if ($res -and $res.explanation) {
+            Write-Host "`n⚡ $($res.explanation)" -ForegroundColor Yellow
+            return
+        }
+        return
     }
 
     [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine($key, $arg)
@@ -174,9 +207,7 @@ Set-PSReadLineKeyHandler -Chord 'Ctrl+Spacebar' -BriefDescription "ANIX Type Tri
             cwd    = (Get-Location).Path
         } -TimeoutMs 400
 
-        if ($sug -and $sug.text) {
-            [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $sug.text)
-        }
+        Apply-AnixTypeSuggestion -sug $sug -line $line -cursor $cursor
     }
 }
 
