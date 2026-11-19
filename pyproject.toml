@@ -3,7 +3,7 @@ name = "anix-type"
 version = "0.1.0"
 description = "Context-aware autocompletion and natural language command forge for your terminal."
 readme = "README.md"
-license = { text = "MIT" }
+license = "MIT"
 requires-python = ">=3.10"
 dependencies = []
 
@@ -12,7 +12,6 @@ keywords = ["terminal", "powershell", "autocomplete", "cli", "ai", "ollama", "gr
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -25,7 +24,9 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://github.com/an1zy/anix-type"
+Repository = "https://github.com/an1zy/anix-type"
 Issues = "https://github.com/an1zy/anix-type/issues"
+PyPI = "https://pypi.org/project/anix-type/"
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
